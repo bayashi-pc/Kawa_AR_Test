@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>かわいこちゃんARビューア</title>
+  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+  <script nomodule src="https://unpkg.com/@google/model-viewer/dist/model-viewer-legacy.js"></script>
+  <style>
+    :root {
+      --ar-button-color: #ffffff;
+      --ar-button-size: 60px;
+      --model-opacity: 1;
+    }
+
+    body {
+      margin: 0;
+      background: #f8f9fa;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      overflow-x: hidden;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    model-viewer {
+      width: 100%;
+      height: 80vh;
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+      opacity: var(--model-opacity);
+    }
+
+    .ar-button-custom {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      width: var(--ar-button-size);
+      height: var(--ar-button-size);
+      background: var(--ar-button-color);
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,123,255,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .ar-button-custom img {
+      width: 60%;
+      height: 60%;
+      filter: brightness(1.2) saturate(1.5);
+    }
+    
+    /* iOS 18 不具合対策 */
+    @supports (font: -apple-system-body) and (-webkit-touch-callout: none) {
+      model-viewer {
+        --model-opacity: 0.99; /* 透過バグ回避 */
+        ar-scale: 0.01;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>かわいこちゃんAR</h1>
+    <p>ARボタンを押してスマホを動かすと、目の前にかわいこちゃんの3Dモデルが出現します</p>
+
+    <model-viewer
+      id="kawaiko-chan-model"
+      src="Kawaikochan_02_mate.glb"
+      ios-src="Kawaikochan_02_mate.usdz"
+      ar
+      ar-modes="webxr scene-viewer quick-look"
+      ar-placement="floor"
+      ar-scale="auto"
+      scale="0.01 0.01 0.01"
+      camera-controls
+      auto-rotate
+      shadow-intensity="0.5"
+      environment-intensity="1.8"
+      exposure="0.85"
+      interaction-prompt="none"
+      camera-orbit="0deg 75deg 15m"
+      field-of-view="40deg"
+      camera-target="0m 0m 0m"
+      xr-environment
+      environment-image="neutral"
+      reveal="auto"
+      loading="eager"
+      bounds="tight">
+
+      <div class="ar-button-custom" slot="ar-button">
+        <img src="icon.svg" alt="ARアイコン">
+      </div>
+    </model-viewer>
+  </div>
+
+  <script>
+    const modelViewer = document.querySelector('#kawaiko-chan-model');
+    let isModelVisible = true;
+
+    // モデル初期化
+    modelViewer.addEventListener('load', () => {
+      // スケール設定（PLATEAUデータ用）
+      modelViewer.modelScale = "0.005"; // 実物の1/200サイズ
+      modelViewer.cameraTarget = '0m 0m 0m';
+
+      // iOS 18対策
+      if (/iPhone OS 18/.test(navigator.userAgent)) {
+        modelViewer.shadowIntensity = 0.3;
+        modelViewer.environmentIntensity = 2.2;
+        modelViewer.style.setProperty('--model-opacity', '0.999');
+      }
+
+      // Android用最適化
+      if (/Android/.test(navigator.userAgent)) {
+        modelViewer.arPlacement = "wall";
+        modelViewer.setAttribute('camera-orbit', '0deg 75deg 10m');
+        modelViewer.shadowIntensity = 0.7;
+      }
+
+      // 透明度監視
+      const observer = new MutationObserver(mutations => {
+        mutations.forEach(mutation => {
+          if (mutation.attributeName === 'style') {
+            const currentOpacity = parseFloat(modelViewer.style.opacity);
+            if (currentOpacity < 0.95 && isModelVisible) {
+              console.warn('モデル透明度異常検出:', currentOpacity);
+              modelViewer.style.opacity = '1';
+              modelViewer.style.mixBlendMode = 'normal';
+            }
+          }
+        });
+      });
+
+      observer.observe(modelViewer, {
+        attributes: true,
+        attributeFilter: ['style']
+      });
+    });
+
+    // パフォーマンス監視
+    let lastFrameTime = performance.now();
+    modelViewer.addEventListener('ar-tracking', () => {
+      const now = performance.now();
+      const delta = now - lastFrameTime;
+      
+      if (delta > 33) { // 30fpsを下回った場合
+        console.log(`パフォーマンス警告: ${Math.floor(1000/delta)}fps`);
+        modelViewer.loading = "lazy";
+      }
+      
+      lastFrameTime = now;
+    });
+
+    // 手動リセット機能
+    window.addEventListener('deviceorientation', () => {
+      if (!isModelVisible) {
+        modelViewer.cameraOrbit = '0deg 75deg 15m';
+        modelViewer.cameraTarget = '0m 0m 0m';
+        isModelVisible = true;
+      }
+    });
+  </script>
+</body>
+</html>
