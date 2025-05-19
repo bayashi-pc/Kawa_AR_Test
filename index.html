@@ -11,6 +11,7 @@
       --ar-button-color: #007bffcc;
       --ar-button-size: 64px;
       --model-opacity: 1;
+      --safe-bottom: 0px; /* スマホの下部安全領域用 */
     }
 
     body {
@@ -28,18 +29,22 @@
 
     model-viewer {
       width: 100%;
-      height: 80vh;
+      /* 実際の可視領域に合わせて高さを調整（JSで--vhを設定） */
+      height: calc(var(--vh, 1vh) * 80);
       background: #ffffff;
       border-radius: 16px;
       box-shadow: 0 8px 16px rgba(0,0,0,0.1);
       opacity: var(--model-opacity);
       position: relative;
+      margin-bottom: 24px; /* 追加余白でボタンが隠れないように */
+      transition: height 0.2s;
     }
 
-    /* 右下に目立つARボタン */
+    /* 右下に目立つARボタン。下部安全領域も考慮 */
     .ar-button-custom {
       position: absolute;
-      bottom: 32px;
+      /* 下端から48px＋安全領域分だけ上に配置 */
+      bottom: calc(48px + var(--safe-bottom, 0px));
       right: 32px;
       width: var(--ar-button-size);
       height: var(--ar-button-size);
@@ -53,7 +58,7 @@
       z-index: 1000;
       animation: arbtn-blink 1.2s infinite alternate;
       border: 4px solid #fff;
-      transition: background 0.2s, opacity 0.2s;
+      transition: background 0.2s, opacity 0.2s, bottom 0.2s;
       opacity: 0.92;
     }
 
@@ -97,8 +102,8 @@
       .ar-button-custom {
         width: 48px;
         height: 48px;
-        bottom: 16px;
         right: 16px;
+        bottom: calc(24px + var(--safe-bottom, 0px));
       }
       .ar-button-custom img {
         width: 36px;
@@ -106,6 +111,9 @@
       }
       .ar-button-label {
         font-size: 0.85rem;
+      }
+      model-viewer {
+        margin-bottom: 16px;
       }
     }
   </style>
@@ -146,6 +154,27 @@
   </div>
 
   <script>
+    // スマホのビューポート高さに合わせて--vhを動的に設定
+    function setVh() {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    }
+    window.addEventListener('resize', setVh);
+    window.addEventListener('orientationchange', setVh);
+    setVh();
+
+    // iOSのセーフエリア（ホームバー等）を考慮
+    function setSafeBottom() {
+      let safeBottom = 0;
+      if (window.CSS && CSS.supports('padding-bottom: env(safe-area-inset-bottom)')) {
+        // iOS Safariなどでセーフエリア取得
+        safeBottom = getComputedStyle(document.documentElement).getPropertyValue('env(safe-area-inset-bottom)');
+      }
+      document.documentElement.style.setProperty('--safe-bottom', safeBottom || '0px');
+    }
+    window.addEventListener('resize', setSafeBottom);
+    setSafeBottom();
+
     // iOS 18対策や透明度監視などは必要に応じて追加してください
     const modelViewer = document.querySelector('#kawaiko-chan-model');
     modelViewer.addEventListener('load', () => {
