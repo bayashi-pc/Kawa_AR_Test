@@ -56,7 +56,7 @@
       height: 60%;
       filter: brightness(1.2) saturate(1.5);
     }
-    
+
     /* iOS 18 不具合対策 */
     @supports (font: -apple-system-body) and (-webkit-touch-callout: none) {
       model-viewer {
@@ -79,7 +79,6 @@
       ar-modes="webxr scene-viewer quick-look"
       ar-placement="floor"
       ar-scale="auto"
-      scale="1 1 1"
       camera-controls
       auto-rotate
       shadow-intensity="0.5"
@@ -94,7 +93,6 @@
       reveal="auto"
       loading="eager"
       bounds="tight">
-
       <div class="ar-button-custom" slot="ar-button">
         <img src="icon.svg" alt="ARアイコン">
       </div>
@@ -107,25 +105,14 @@
 
     // モデル初期化
     modelViewer.addEventListener('load', () => {
-      // スケール設定（PLATEAUデータ用）
-      modelViewer.modelScale = "1"; // 実物の1/200サイズ
-      modelViewer.cameraTarget = '0m 0m 0m';
-
-      // iOS 18対策
+      // iOS 18対策のみ
       if (/iPhone OS 18/.test(navigator.userAgent)) {
         modelViewer.shadowIntensity = 0.3;
         modelViewer.environmentIntensity = 2.2;
         modelViewer.style.setProperty('--model-opacity', '0.999');
       }
 
-      // Android用最適化
-      if (/Android/.test(navigator.userAgent)) {
-        modelViewer.arPlacement = "wall";
-        modelViewer.setAttribute('camera-orbit', '0deg 75deg 10m');
-        modelViewer.shadowIntensity = 0.7;
-      }
-
-      // 透明度監視
+      // 透明度監視（任意：必要に応じて）
       const observer = new MutationObserver(mutations => {
         mutations.forEach(mutation => {
           if (mutation.attributeName === 'style') {
@@ -145,21 +132,21 @@
       });
     });
 
-    // パフォーマンス監視
+    // パフォーマンス監視（任意：必要に応じて）
     let lastFrameTime = performance.now();
     modelViewer.addEventListener('ar-tracking', () => {
       const now = performance.now();
       const delta = now - lastFrameTime;
-      
+
       if (delta > 33) { // 30fpsを下回った場合
         console.log(`パフォーマンス警告: ${Math.floor(1000/delta)}fps`);
         modelViewer.loading = "lazy";
       }
-      
+
       lastFrameTime = now;
     });
 
-    // 手動リセット機能
+    // 手動リセット機能（任意：必要に応じて）
     window.addEventListener('deviceorientation', () => {
       if (!isModelVisible) {
         modelViewer.cameraOrbit = '0deg 75deg 15m';
