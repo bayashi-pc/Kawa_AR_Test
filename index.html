@@ -120,8 +120,25 @@
 </head>
 <body>
   <div class="container">
-    <h1>かわいこちゃんAR</h1>
+    <h1>川へ行こう！かわいこちゃんAR</h1>
     <p>ARボタンを押してスマホを動かすと、目の前にかわいこちゃんの3Dモデルが出現します</p>
+
+  <div class="note">
+      Android端末では、ARモード中にカメラボタンが表示されません。撮影したい場合は、端末のスクリーンショット機能をご利用ください。
+    </div>
+
+    <h2>かわいこちゃんについて</h2>
+    <p>
+      <strong>名前の由来：</strong>
+      「かわいこちゃん」の名前は、「川へ行こう！」という言葉から生まれました。<br>
+      河川をより身近に感じ、積極的に訪れてもらいたいという気持ちが込められています。
+    </p>
+    <p>
+      <strong>キャラクター紹介：</strong>
+      かわいこちゃんは、東京の川の妖精です。<br>
+      趣味は河川構造物の見学や川の写真撮影、橋等のグッズ集めです。頭の帽子とズボンは橋。<br>
+    </p>
+
 
     <model-viewer
       id="kawaiko-chan-model"
@@ -175,7 +192,7 @@
     window.addEventListener('resize', setSafeBottom);
     setSafeBottom();
 
-    // iOS 18対策や透明度監視などは必要に応じて追加してください
+    // iOS 18対策
     const modelViewer = document.querySelector('#kawaiko-chan-model');
     modelViewer.addEventListener('load', () => {
       if (/iPhone OS 18/.test(navigator.userAgent)) {
