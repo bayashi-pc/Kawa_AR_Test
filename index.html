@@ -3,9 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>かわいこちゃんARビューア</title>
+  <title>かわいこちゃんARビューワー</title>
+  <!-- model-viewer とエフェクトライブラリを読み込み -->
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
   <script nomodule src="https://unpkg.com/@google/model-viewer/dist/model-viewer-legacy.js"></script>
+  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer-effects.min.js"></script>
+  
   <style>
     :root {
       --ar-button-color: #007bffcc;
@@ -29,21 +32,66 @@
 
     model-viewer {
       width: 100%;
-      /* 実際の可視領域に合わせて高さを調整（JSで--vhを設定） */
       height: calc(var(--vh, 1vh) * 80);
       background: #ffffff;
       border-radius: 16px;
       box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-      opacity: var(--model-opacity);
       position: relative;
-      margin-bottom: 24px; /* 追加余白でボタンが隠れないように */
-      transition: height 0.2s;
+      margin-bottom: 24px;
+      --poster-color: #f0f0f0; 
     }
 
-    /* 右下に目立つARボタン。下部安全領域も考慮 */
+    /* ホットスポットのスタイル */
+    .hotspot {
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 32px;
+      border: 2px solid #007bff;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+      box-sizing: border-box;
+      cursor: pointer;
+      height: 24px;
+      width: 24px;
+      transition: opacity 0.3s;
+    }
+
+    .hotspot[slot="hotspot-hat"]:before,
+    .hotspot[slot="hotspot-belly"]:before {
+      content: "+";
+      font-size: 20px;
+      font-weight: bold;
+      color: #007bff;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -52%);
+    }
+
+    /* ホットスポットの注釈（吹き出し）のスタイル */
+    .hotspot-annotation {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0,123,255,0.2);
+      color: #333;
+      display: none; /* 初期状態では非表示 */
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      font-size: 1rem;
+      font-weight: 500;
+      left: calc(100% + 1em);
+      max-width: 200px;
+      padding: 0.8em 1em;
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none; /* 注釈自体はクリックできないようにする */
+    }
+    
+    /* このクラスが付くと注釈が表示される */
+    .hotspot-annotation.visible {
+      display: block;
+    }
+
     .ar-button-custom {
       position: absolute;
-      /* 下端から48px＋安全領域分だけ上に配置 */
       bottom: calc(60px + var(--safe-bottom, 0px));
       right: 32px;
       width: var(--ar-button-size);
@@ -61,69 +109,33 @@
       transition: background 0.2s, opacity 0.2s, bottom 0.2s;
       opacity: 0.92;
     }
-
-    .ar-button-custom:hover {
-      background: #0056b3;
-      opacity: 1;
-    }
-
-    .ar-button-custom img {
-      width: 60%;
-      height: 60%;
-      filter: brightness(1.2) saturate(1.5);
-      pointer-events: none;
-    }
-
-    .ar-button-label {
-      position: absolute;
-      top: 100%;
-      left: 50%;
-      transform: translate(-50%, 0);
-      margin-top: 0.5em;
-      background: #fff;
-      color: #007bff;
-      padding: 0.2em 0.8em;
-      border-radius: 1em;
-      font-size: 1rem;
-      font-weight: bold;
-      box-shadow: 0 2px 8px rgba(0,123,255,0.08);
-      pointer-events: none;
-      user-select: none;
-      white-space: nowrap;
-    }
+    
+    .ar-button-custom:hover { background: #0056b3; opacity: 1; }
+    .ar-button-custom img { width: 60%; height: 60%; filter: brightness(1.2) saturate(1.5); pointer-events: none; }
+    .ar-button-label { position: absolute; top: 100%; left: 50%; transform: translate(-50%, 0); margin-top: 0.5em; background: #fff; color: #007bff; padding: 0.2em 0.8em; border-radius: 1em; font-size: 1rem; font-weight: bold; box-shadow: 0 2px 8px rgba(0,123,255,0.08); pointer-events: none; user-select: none; white-space: nowrap; }
+    
+    .ar-prompt { position: absolute; left: 50%; bottom: 80px; transform: translateX(-50%); background: rgba(0, 0, 0, 0.7); color: white; padding: 12px 20px; border-radius: 20px; font-size: 1rem; text-align: center; display: none; z-index: 1001; }
 
     @keyframes arbtn-blink {
       0% { box-shadow: 0 0 20px 5px #007bff88; }
       100% { box-shadow: 0 0 40px 10px #007bffcc; }
     }
 
-    /* スマホでのレスポンシブ対応 */
     @media (max-width: 600px) {
-      .ar-button-custom {
-        width: 48px;
-        height: 48px;
-        right: 16px;
-        bottom: calc(24px + var(--safe-bottom, 0px));
-      }
-      .ar-button-custom img {
-        width: 36px;
-        height: 36px;
-      }
-      .ar-button-label {
-        font-size: 0.85rem;
-      }
-      model-viewer {
-        margin-bottom: 16px;
-      }
+      .ar-button-custom { width: 48px; height: 48px; right: 16px; bottom: calc(24px + var(--safe-bottom, 0px)); }
+      .ar-button-custom img { width: 36px; height: 36px; }
+      .ar-button-label { font-size: 0.85rem; }
+      model-viewer { margin-bottom: 16px; }
+      .ar-prompt { bottom: 70px; font-size: 0.9rem; }
     }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>川へ行こう！かわいこちゃんAR</h1>
-    <p>ARボタンを押してスマホを動かすと、目の前にかわいこちゃんの3Dモデルが出現します</p>
+    <p>モデル上の「+」マークをタップすると、キャラクターの詳しい情報が見られます。</p>
 
-  <div class="note">
+    <div class="note">
       Android端末では、ARモード中にカメラボタンが表示されません。撮影したい場合は、端末のスクリーンショット機能をご利用ください。
     </div>
 
@@ -136,7 +148,7 @@
     <p>
       <strong>キャラクター紹介：</strong>
       かわいこちゃんは、東京の川の妖精です。<br>
-      趣味は河川構造物の見学や川の写真撮影、橋等のグッズ集めです。頭の帽子とズボンは橋。<br>
+      趣味は河川構造物の見学や川の写真撮影、橋等のグッズ集めです。頭の帽子とズボンは橋。
     </p>
 
 
@@ -162,16 +174,52 @@
       reveal="auto"
       loading="eager"
       bounds="tight"
-      style="position:relative;">
+      style="position:relative;"
+      poster="Kawaikochan_poster.webp">
+      
+      <effect-composer>
+        <bloom-effect strength="0.4" radius="0.6"></bloom-effect>
+      </effect-composer>
+
+      <!-- ホットスポット（帽子） -->
+      <button class="hotspot" slot="hotspot-hat" data-position="0.05m 1.1m 0m" data-normal="0m 1m 0m">
+        <div class="hotspot-annotation">頭の帽子とズボンは「橋」がモチーフなんだ！</div>
+      </button>
+
+      <!-- ホットスポット（お腹） -->
+      <button class="hotspot" slot="hotspot-belly" data-position="0m 0.45m 0.2m" data-normal="0m 0m 1m">
+        <div class="hotspot-annotation">趣味は河川構造物の見学や写真撮影だよ。</div>
+      </button>
+      
       <div class="ar-button-custom" slot="ar-button">
         <img src="icon.svg" alt="ARアイコン">
         <span class="ar-button-label">ARで見る</span>
+      </div>
+
+      <div id="ar-prompt" class="ar-prompt">
+        カメラを床に向けてゆっくり動かしてください
       </div>
     </model-viewer>
   </div>
 
   <script>
-    // スマホのビューポート高さに合わせて--vhを動的に設定
+    const modelViewer = document.querySelector('#kawaiko-chan-model');
+
+    // ホットスポットのクリックイベントを処理
+    modelViewer.addEventListener('click', (event) => {
+      const { target } = event;
+      // クリックされたのがホットスポットかどうかを確認
+      if (target.classList.contains('hotspot')) {
+        const annotation = target.querySelector('.hotspot-annotation');
+        if (annotation) {
+          // クリックされたホットスポットの注釈だけ表示/非表示を切り替える
+          annotation.classList.toggle('visible');
+        }
+      }
+    });
+    
+    // --- 以下は前回までのコードと同様 ---
+
     function setVh() {
       const vh = window.innerHeight * 0.01;
       document.documentElement.style.setProperty('--vh', `${vh}px`);
@@ -180,11 +228,9 @@
     window.addEventListener('orientationchange', setVh);
     setVh();
 
-    // iOSのセーフエリア（ホームバー等）を考慮
     function setSafeBottom() {
       let safeBottom = 0;
       if (window.CSS && CSS.supports('padding-bottom: env(safe-area-inset-bottom)')) {
-        // iOS Safariなどでセーフエリア取得
         safeBottom = getComputedStyle(document.documentElement).getPropertyValue('env(safe-area-inset-bottom)');
       }
       document.documentElement.style.setProperty('--safe-bottom', safeBottom || '0px');
@@ -192,8 +238,6 @@
     window.addEventListener('resize', setSafeBottom);
     setSafeBottom();
 
-    // iOS 18対策
-    const modelViewer = document.querySelector('#kawaiko-chan-model');
     modelViewer.addEventListener('load', () => {
       if (/iPhone OS 18/.test(navigator.userAgent)) {
         modelViewer.shadowIntensity = 0.3;
@@ -201,6 +245,16 @@
         modelViewer.style.setProperty('--model-opacity', '0.999');
       }
     });
+
+    const arPrompt = document.querySelector('#ar-prompt');
+    modelViewer.addEventListener('ar-status', (event) => {
+      if (event.detail.status === 'session-started') {
+        arPrompt.style.display = 'block';
+      } else {
+        arPrompt.style.display = 'none';
+      }
+    });
+
   </script>
 </body>
 </html>
