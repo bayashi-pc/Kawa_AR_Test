@@ -77,12 +77,14 @@
       font-size: 1rem;
       font-weight: 500;
       left: calc(100% + 1em);
-      max-width: 1200px;
+      max-width: 350px;
       padding: 0.8em 1em;
       position: absolute;
       top: 50%;
       transform: translateY(-50%);
       pointer-events: none; /* 注釈自体はクリックできないようにする */
+      white-space: normal; /* 折り返しを許可 */
+      word-break: break-word; /* 長い単語の折り返しも許可 */
     }
     
     /* このクラスが付くと注釈が表示される */
@@ -258,6 +260,7 @@
   </script>
 </body>
 </html>
+
 
 
 
