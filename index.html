@@ -6,11 +6,11 @@
   <title>かわいこちゃんARビューワー</title>
 
   <!-- model-viewer（modern only）。旧ブラウザ対応が必要なら legacy を追加 -->
-  https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js</script>
+  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
   <!-- 旧ブラウザ対応が必要な場合のみ以下を有効化（パフォーマンスのため通常は不要） -->
   <!-- https://unpkg.com/@google/model-viewer/dist/model-viewer-legacy.js</script> -->
   <!-- エフェクト（Bloom 等） -->
-  https://unpkg.com/@google/model-viewer/dist/model-viewer-effects.min.js</script>
+  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer-effects.min.js"></script>
 
   <style>
     :root {
@@ -380,3 +380,4 @@
 </body>
 </html>
 ``
+
