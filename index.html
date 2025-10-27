@@ -5,13 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>かわいこちゃんARビューワー</title>
 
-  <!-- model-viewer とエフェクトライブラリ（modern） -->
+  <!-- model-viewer（modern only）。旧ブラウザ対応が必要なら legacy を追加 -->
   https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js</script>
-  <!-- ※旧ブラウザ対応が不要なら legacy は読み込まない（軽量化）。必要なら次の行を有効化 -->
+  <!-- 旧ブラウザ対応が必要な場合のみ以下を有効化（パフォーマンスのため通常は不要） -->
   <!-- https://unpkg.com/@google/model-viewer/dist/model-viewer-legacy.js</script> -->
-  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer-effects.min.js"></script>
+  <!-- エフェクト（Bloom 等） -->
+  https://unpkg.com/@google/model-viewer/dist/model-viewer-effects.min.js</script>
 
--ar-button-color: #007bffcc;
+  <style>
+    :root {
+      --ar-button-color: #007bffcc;
       --ar-button-size: 64px;
       --model-opacity: 1;
       /* iOS のセーフエリアを CSS で初期化（JS から読み取り可能） */
@@ -43,7 +46,7 @@
       --poster-color: #f0f0f0;
     }
 
-    /* ホットスポットのスタイル */
+    /* ホットスポット */
     .hotspot {
       background: rgba(255, 255, 255, 0.8);
       border-radius: 32px;
@@ -74,34 +77,34 @@
       pointer-events: none;
     }
 
-    /* ホットスポットの注釈（吹き出し）のスタイル */
+    /* 吹き出し */
     .hotspot-annotation {
       background: #fff;
       border-radius: 8px;
       box-shadow: 0 4px 8px rgba(0,123,255,0.2);
       color: #333;
-      display: none; /* 初期状態では非表示 */
+      display: none; /* 初期は非表示 */
       font-family: 'Helvetica Neue', Arial, sans-serif;
       font-size: 1rem;
       font-weight: 500;
       left: calc(100% + 1em);
-      width: 280px; /* max-width の代わり */
+      width: 280px;
       padding: 0.8em 1em;
       position: absolute;
       top: 50%;
       transform: translateY(-50%);
       pointer-events: none; /* 注釈はクリック不可 */
-      white-space: normal; /* 折り返し許可 */
-      word-break: break-word; /* 長単語折り返し */
-      text-align: left; /* 横書き */
-      writing-mode: horizontal-tb; /* 明示的に横書き */
+      white-space: normal;
+      word-break: break-word;
+      text-align: left;
+      writing-mode: horizontal-tb;
       z-index: 10;
     }
-    /* このクラスが付くと注釈が表示される */
     .hotspot-annotation.visible {
       display: block;
     }
 
+    /* カスタム AR ボタンは button 要素 */
     .ar-button-custom {
       position: absolute;
       bottom: calc(60px + var(--safe-bottom));
@@ -121,7 +124,8 @@
       transition: background 0.2s, opacity 0.2s, bottom 0.2s;
       opacity: 0.92;
       touch-action: manipulation;
-      border: none; /* button の既定スタイル除去 */
+      border: none; /* 既定ボーダー除去 */
+      padding: 0;
     }
     .ar-button-custom:hover { background: #0056b3; opacity: 1; }
     .ar-button-custom img { width: 60%; height: 60%; filter: brightness(1.2) saturate(1.5); pointer-events: none; }
@@ -178,7 +182,7 @@
     /* 動きが苦手なユーザー/低負荷向け */
     @media (prefers-reduced-motion: reduce) {
       model-viewer {
-        --disable-effects: 1; /* JS 側で参照可 */
+        --disable-effects: 1; /* JS で参照 */
       }
     }
   </style>
@@ -204,6 +208,7 @@
       趣味は河川構造物の見学や川の写真撮影、橋等のグッズ集めです。頭の帽子とズボンは橋。
     </p>
 
+    <!-- model-viewer 本体 -->
     <model-viewer
       id="kawaiko-chan-model"
       src="Kawaikochan_02_mate.glb"
@@ -224,7 +229,7 @@
       xr-environment
       environment-image="neutral"
       reveal="auto"
-      loading="lazy"                <!-- ここを lazy に変更 -->
+      loading="lazy"
       bounds="tight"
       style="position:relative;"
       poster="Kawaikochan_poster.webp">
@@ -239,17 +244,14 @@
               slot="hotspot-hat"
               data-position="0.15m 0.8m 0m"
               data-normal="0m 1m 0m"
-"anno-belly"
+              aria-label="帽子の説明を表示"
+              aria-haspopup="true"
+              aria-controls="anno-hat"
               aria-expanded="false">
-        <div class="hotspot-annotation" role="tooltip" id="anno-belly">
-          趣味は河川構造物の見学や写真撮影だよ。
-        </div>
-      </button>
-
-      <!-- カスタム AR ボタンは button 要素に -->
-      <button class="ar-button-custom" slot="ar-button" aria-label="ARで表示">
-        <img src="icon.svg" alt="" aria-hidden="true">
-ARで見る</span>
+        <div class="hotspot-annotation" role="tooltip" id="anno-hat">
+         示">
+        icon.svg
+        <span class="ar-button-label">ARで見る</span>
       </button>
 
       <div id="ar-prompt" class="ar-prompt">
@@ -317,7 +319,6 @@ ARで見る</span>
         arPrompt.style.display = 'none';
       }
       if (s === 'failed') {
-        // 失敗時の簡易案内（必要なら UI に変更）
         alert('ARの開始に失敗しました。周囲の明るさや床面の模様を確認し、端末をゆっくり動かしてください。');
       }
     });
@@ -363,7 +364,6 @@ ARで見る</span>
 
     function keepAnnotationInView(annoEl) {
       // 左右のはみ出しを検出して、left/right を入れ替える
-      // 初期：right を auto にして left 固定
       annoEl.style.right = 'auto';
       annoEl.style.left = 'calc(100% + 1em)';
 
@@ -375,9 +375,8 @@ ARで見る</span>
         annoEl.style.left = 'auto';
         annoEl.style.right = 'calc(100% + 1em)';
       }
-
-      // 必要なら上端/下端も後続で調整（今回は省略）
     }
   </script>
 </body>
 </html>
+``
