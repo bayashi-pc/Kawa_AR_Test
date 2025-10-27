@@ -1,23 +1,23 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>かわいこちゃんARビューワー</title>
 
-  <!-- model-viewer（modern only）。旧ブラウザ対応が必要なら legacy を追加 -->
+  <!-- model-viewer（modern） -->
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
-  <!-- 旧ブラウザ対応が必要な場合のみ以下を有効化（パフォーマンスのため通常は不要） -->
-  <!-- https://unpkg.com/@google/model-viewer/dist/model-viewer-legacy.js</script> -->
-  <!-- エフェクト（Bloom 等） -->
-  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer-effects.min.js"></script>
+削除可） -->
+  <script nomodule src="https://unpkg.com/@google/model-viewer/dist/model-viewer-legacy.js"></script>
+>
+  <script type="module" src="https://unpkg.com/@google/modelffects.min.js</script>
 
   <style>
     :root {
       --ar-button-color: #007bffcc;
       --ar-button-size: 64px;
       --model-opacity: 1;
-      /* iOS のセーフエリアを CSS で初期化（JS から読み取り可能） */
+      /* iOS のセーフエリアを CSS で初期化（JS から読み取り） */
       --safe-bottom: env(safe-area-inset-bottom, 0px);
       --vh: 1vh; /* 初期値（JS で更新） */
     }
@@ -199,12 +199,12 @@
     <h2>かわいこちゃんについて</h2>
     <p>
       <strong>名前の由来：</strong>
-      「かわいこちゃん」の名前は、「川へ行こう！」という言葉から生まれました。<br>
+      「かわいこちゃん」の名前は、「川へ行こう！」という言葉から生まれました。<br />
       河川をより身近に感じ、積極的に訪れてもらいたいという気持ちが込められています。
     </p>
     <p>
       <strong>キャラクター紹介：</strong>
-      かわいこちゃんは、東京の川の妖精です。<br>
+      かわいこちゃんは、東京の川の妖精です。<br />
       趣味は河川構造物の見学や川の写真撮影、橋等のグッズ集めです。頭の帽子とズボンは橋。
     </p>
 
@@ -249,15 +249,15 @@
               aria-controls="anno-hat"
               aria-expanded="false">
         <div class="hotspot-annotation" role="tooltip" id="anno-hat">
-         示">
-        icon.svg
-        <span class="ar-button-label">ARで見る</span>
+          頭の帽子とズボンは「橋」がモチーフなんだ！
+        </div>
       </button>
 
-      <div id="ar-prompt" class="ar-prompt">
-        カメラを床に向けてゆっくり動かしてください
-      </div>
-    </model-viewer>
+      <!-- ホットスポット（お腹） -->
+      <button class="hotspot"
+              id="hotspot-belly"
+              slot="hotspot-belly"
+ </model-viewer>
   </div>
 
   <script>
@@ -270,7 +270,7 @@
       const vh = window.innerHeight * 0.01;
       document.documentElement.style.setProperty('--vh', `${vh}px`);
     }
-    window.addEventListener('resize', setVh);
+    window.addEventListener('resize', setVh, { passive: true });
     window.addEventListener('orientationchange', setVh);
     setVh();
 
@@ -281,7 +281,7 @@
         .trim() || '0px';
       document.documentElement.style.setProperty('--safe-bottom', safeBottom);
     }
-    window.addEventListener('resize', setSafeBottom);
+    window.addEventListener('resize', setSafeBottom, { passive: true });
     setSafeBottom();
 
     // iOS メジャーバージョン取得（UA 依存。可能なら機能検出推奨）
@@ -379,5 +379,3 @@
   </script>
 </body>
 </html>
-``
-
