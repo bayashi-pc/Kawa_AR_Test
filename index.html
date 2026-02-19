@@ -1,389 +1,838 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#0B5FFF">
   <title>かわいこちゃんARビューワー</title>
 
-  <!-- model-viewer（modernブラウザ向け） -->
-  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
-  <script nomodule src="https://unpkg.com/@google/model-viewer/dist/model-viewer-legacy.js"></script>
-  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer-effects.min.js"></script>
-  
-  <style>
-    :root {
-      --ar-button-color: #007bffcc;
-      --ar-button-size: 64px;
-      --model-opacity: 1;
-      /* iOS のセーフエリアを CSS で初期化（JS から参照） */
-      --safe-bottom: env(safe-area-inset-bottom, 0px);
-      --vh: 1vh; /* 初期値（JS で更新） */
-    }
+  <!-- model-viewer（バージョン固定：安定運用） -->
+  https://cdn.jsdelivr.net/npm/@google/model-viewer@4.1.0/dist/model-viewer.min.js</script>
+  https://cdn.jsdelivr.net/npm/@google/model-viewer@4.1.0/dist/model-viewer-legacy.js</script>
 
-    body {
-      margin: 0;
-      background: #f8f9fa;
-      font-family: 'Helvetica Neue', Arial, sans-serif;
-      overflow-x: hidden;
-    }
+  <!-- 先読み（体感向上） -->
+  Kawaikochan_02_mate.glb
+  <link rel="preload" href="Kawaikochan_02_mate.usdz" as="fetch" type="model/vnd.usdz+#F6F7FB; --card:#FFFFFF; --text:#15202B; --muted:#5C6B7A;
+      --brand:#0B5FFF; --brand2:#0647C6;
+      --shadow: 0 12px 30px rgba(10,23,55,.12);
+      --r:16px;
+      --safe-b: env(safe-area-inset-bottom, 0px);
+      --safe-t: env(safe-area-inset-top, 0px);
+      --vh: 1vh;
+      --tap: 44px;
 
-    .container {
-      max-width: 1200px;
+      --hotspot-hit: 44px;
+      --hotspot-dot: 28px;
+    }
+    @media (prefers-color-scheme: dark){
+      :root{
+        --bg:#0B0D13; --card:#121726; --text:#E8ECF7; --muted:#B6C0D9;
+        --shadow: 0 18px 40px rgba(0,0,0,.45);
+      }
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0; background:var(--bg); color:var(--text);
+      font-family: system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", "Segoe UI", Arial, sans-serif;
+      line-height:1.6;
+    }
+    .wrap{
+      max-width: 980px;
       margin: 0 auto;
-      padding: 20px;
+      padding: calc(14px + var(--safe-t)) 14px calc(18px + var(--safe-b));
+    }
+    h1{ font-size:1.35rem; margin:.2rem 0 .4rem; letter-spacing:.02em; }
+    h2{ font-size:1.05rem; margin:1rem 0 .2rem; }
+    p{ margin:.35rem 0; }
+    .muted{ color:var(--muted); font-weight:700; }
+
+    /* in-app banner */
+    .banner{
+      display:none;
+      position: sticky;
+      top: 0;
+      z-index: 9999;
+      background: rgba(255,213,74,.18);
+      border-bottom: 1px solid rgba(0,0,0,.08);
+      padding: 10px 14px;
+    }
+    @media (prefers-color-scheme: dark){
+      .banner{
+        background: rgba(255,213,74,.10);
+        border-bottom-color: rgba(255,255,255,.10);
+      }
+    }
+    .banner-inner{
+      max-width: 980px;
+      margin: 0 auto;
+      display:flex;
+      gap: 10px;
+      align-items:center;
+      justify-content: space-between;
+      flex-wrap: wrap;
     }
 
-    model-viewer {
-      width: 100%;
-      height: calc(var(--vh) * 80);
-      background: #ffffff;
-      border-radius: 16px;
-      box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-      position: relative;
-      margin-bottom: 24px;
-      --poster-color: #f0f0f0;
-    }
-
-    /* ホットスポット */
-    .hotspot {
-      background: rgba(255, 255, 255, 0.8);
-      border-radius: 32px;
-      border: 2px solid #007bff;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
-      box-sizing: border-box;
+    .btn{
+      appearance:none;
+      border: 1px solid rgba(0,0,0,.12);
+      background: var(--card);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 10px 14px;
+      min-height: var(--tap);
+      font-weight: 900;
       cursor: pointer;
-      height: 24px;
-      width: 24px;
-      transition: opacity 0.3s;
-      position: relative;
-      touch-action: manipulation; /* モバイルのクリック遅延を抑制 */
+      touch-action: manipulation;
+      user-select:none;
     }
-    .hotspot:focus-visible {
-      outline: 3px solid #0056b3;
+    .btn.primary{
+      background: var(--brand);
+      border-color: transparent;
+      color:#fff;
+    }
+    .btn:focus-visible{
+      outline: 3px solid rgba(11,95,255,.45);
+      outline-offset: 2px;
+    }
+
+    .note{
+      margin:.7rem 0 1rem;
+      padding:.8rem .95rem;
+      border-radius: 14px;
+      background: rgba(11,95,255,.06);
+      border: 1px solid rgba(11,95,255,.14);
+    }
+
+    .card{
+      background: var(--card);
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      position: relative;
+    }
+
+    model-viewer{
+      width: 100%;
+      height: min(calc(var(--vh) * 78), 720px);
+      display:block;
+      background: radial-gradient(1200px 560px at 50% 10%, rgba(11,95,255,.06), transparent 60%), var(--card);
+      touch-action: pan-y;
+      --poster-color: transparent;
+      outline: none;
+    }
+
+    /* status chip */
+    .chip{
+      position:absolute;
+      left: 12px;
+      top: 12px;
+      z-index: 40;
+      display:flex;
+      align-items:center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: rgba(0,0,0,.58);
+      color:#fff;
+      font-size:.88rem;
+      font-weight: 1000;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      max-width: calc(100% - 24px);
+      pointer-events:none;
+    }
+    .dot{
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: #9E9E9E;
+      flex:0 0 auto;
+    }
+    .chip.ok .dot{ background:#31D27C; }
+    .chip.warn .dot{ background:#FFC107; }
+    .chip.err .dot{ background:#FF5A5A; }
+    .chip span{
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+
+    /* poster/loading */
+    .poster{
+      width:100%; height:100%;
+      display:flex;
+      align-items:flex-end;
+      justify-content:center;
+      padding: 14px 14px 18px;
+      background:
+        linear-gradient(180deg, rgba(0,0,0,.18), rgba(0,0,0,.55)),
+        url("Kawaikochan_poster.webp") center/cover no-repeat;
+      color:#fff;
+    }
+    .poster .panel{
+      width: min(560px, 100%);
+      background: rgba(0,0,0,.55);
+      border: 1px solid rgba(255,255,255,.18);
+      border-radius: 16px;
+      padding: 12px;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    .poster .title{
+      margin: 0 0 6px;
+      font-weight: 1000;
+      letter-spacing: .02em;
+    }
+    .bar{
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.18);
+      overflow:hidden;
+    }
+    .barFill{
+      height:100%;
+      width: 0%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #00A3FF, #0B5FFF);
+      transition: width .18s ease;
+    }
+    .meta{
+      display:flex;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 8px;
+      font-weight: 900;
+    }
+    .meta small{ font-weight: 800; opacity:.9; }
+    .retry{
+      display:none;
+      margin-top: 10px;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* custom AR button */
+    .arBtn{
+      position:absolute;
+      right: 14px;
+      bottom: calc(14px + var(--safe-b));
+      z-index: 50;
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      padding: 12px 14px;
+      border-radius: 999px;
+      border: 0;
+      background: rgba(11,95,255,.92);
+      color:#fff;
+      font-weight: 1100;
+      letter-spacing: .02em;
+      box-shadow: 0 14px 28px rgba(11,95,255,.25);
+      cursor:pointer;
+      min-height: var(--tap);
+      touch-action: manipulation;
+    }
+    .arBtn[disabled]{ opacity:.45; cursor:not-allowed; box-shadow:none; }
+    .arBtn svg{ width: 20px; height: 20px; fill:none; }
+
+    .arGuide{
+      position:absolute;
+      left: 50%;
+      bottom: calc(74px + var(--safe-b));
+      transform: translateX(-50%);
+      z-index: 55;
+      display:none;
+      padding: 10px 12px;
+      border-radius: 999px;
+      background: rgba(0,0,0,.72);
+      color:#fff;
+      font-weight: 1000;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      max-width: calc(100% - 24px);
+      text-align:center;
+    }
+    .arGuide.show{ display:block; }
+
+    /* animation toggle */
+    .animBtn{
+      position:absolute;
+      right: 12px;
+      top: 12px;
+      z-index: 60;
+      display:none;
+      border: 1px solid rgba(255,255,255,.22);
+      background: rgba(0,0,0,.58);
+      color:#fff;
+      border-radius: 999px;
+      padding: 10px 12px;
+      font-weight: 1100;
+      cursor:pointer;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    .animBtn.show{ display:block; }
+
+    /* hotspots */
+    .hotspot{
+      width: var(--hotspot-hit);
+      height: var(--hotspot-hit);
+      border:0;
+      background: transparent;
+      padding:0;
+      cursor:pointer;
+      touch-action: none;
+      position:relative;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .hotspot::before{
+      content:"";
+      position:absolute;
+      inset: calc((var(--hotspot-hit) - var(--hotspot-dot)) / 2);
+      border-radius: 999px;
+      background: rgba(255,255,255,.90);
+      border: 2px solid rgba(11,95,255,.90);
+      box-shadow: 0 6px 14px rgba(11,95,255,.18);
+    }
+    .hotspot::after{
+      content:"+";
+      position:absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%,-55%);
+      font-size: 22px;
+      font-weight: 1100;
+      color: rgba(11,95,255,.95);
+      pointer-events:none;
+    }
+    .hotspot:focus-visible{
+      outline: 3px solid rgba(11,95,255,.55);
       outline-offset: 3px;
     }
-    .hotspot[slot="hotspot-hat"]::before,
-    .hotspot[slot="hotspot-belly"]::before {
-      content: "+";
-      font-size: 20px;
-      font-weight: bold;
-      color: #007bff;
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -52%);
-      pointer-events: none;
-    }
 
-    /* 吹き出し */
-    .hotspot-annotation {
-      background: #fff;
-      border-radius: 8px;
-      box-shadow: 0 4px 8px rgba(0,123,255,0.2);
-      color: #333;
-      display: none; /* 初期は非表示 */
-      font-family: 'Helvetica Neue', Arial, sans-serif;
-      font-size: 1rem;
-      font-weight: 500;
-      left: calc(100% + 1em);
-      width: 280px;
-      padding: 0.8em 1em;
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      pointer-events: none; /* 注釈はクリック不可 */
-      white-space: normal;
+    .anno{
+      position:absolute;
+      z-index: 80;
+      min-width: 220px;
+      max-width: min(320px, calc(100vw - 48px));
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(255,255,255,.96);
+      color: #15202B;
+      border: 1px solid rgba(0,0,0,.08);
+      box-shadow: 0 16px 30px rgba(0,0,0,.18);
+      display:none;
+      pointer-events:none;
       word-break: break-word;
-      text-align: left;
-      writing-mode: horizontal-tb;
-      z-index: 10;
     }
-    .hotspot-annotation.visible {
-      display: block;
+    @media (prefers-color-scheme: dark){
+      .anno{
+        background: rgba(18,23,38,.96);
+        color: var(--text);
+        border-color: rgba(255,255,255,.12);
+      }
     }
+    .anno.show{ display:block; }
 
-    /* カスタム AR ボタンは button 要素 */
-    .ar-button-custom {
-      position: absolute;
-      bottom: calc(60px + var(--safe-bottom));
-      right: 32px;
-      width: var(--ar-button-size);
-      height: var(--ar-button-size);
-      background: var(--ar-button-color);
-      border-radius: 50%;
-      cursor: pointer;
-      box-shadow: 0 4px 12px rgba(0,123,255,0.3);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      animation: arbtn-blink 1.2s infinite alternate;
-      border: 4px solid #fff;
-      transition: background 0.2s, opacity 0.2s, bottom 0.2s;
-      opacity: 0.92;
-      touch-action: manipulation;
-      border: none; /* 既定ボーダー除去 */
-      padding: 0;
-    }
-    .ar-button-custom:hover { background: #0056b3; opacity: 1; }
-    .ar-button-custom img { width: 60%; height: 60%; filter: brightness(1.2) saturate(1.5); pointer-events: none; }
-    .ar-button-label {
-      position: absolute;
-      top: 100%;
+    /* toast */
+    .toast{
+      position: fixed;
       left: 50%;
-      transform: translate(-50%, 0);
-      margin-top: 0.5em;
-      background: #fff;
-      color: #007bff;
-      padding: 0.2em 0.8em;
-      border-radius: 1em;
-      font-size: 1rem;
-      font-weight: bold;
-      box-shadow: 0 2px 8px rgba(0,123,255,0.08);
-      pointer-events: none;
-      user-select: none;
-      white-space: nowrap;
-    }
-
-    .ar-prompt {
-      position: absolute;
-      left: 50%;
-      bottom: 80px;
+      bottom: calc(14px + var(--safe-b));
       transform: translateX(-50%);
-      background: rgba(0, 0, 0, 0.7);
-      color: white;
-      padding: 12px 20px;
-      border-radius: 20px;
-      font-size: 1rem;
-      text-align: center;
-      display: none;
-      z-index: 1001;
+      z-index: 9999;
+      background: rgba(0,0,0,.82);
+      color:#fff;
+      padding: 12px 14px;
+      border-radius: 14px;
+      box-shadow: 0 14px 30px rgba(0,0,0,.28);
+      max-width: min(680px, calc(100% - 22px));
+      display:none;
+    }
+    .toast.show{ display:block; }
+    .toast .row{
+      display:flex;
+      gap: 10px;
+      align-items:center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+    .toast .row button{
+      border: 1px solid rgba(255,255,255,.28);
+      background: rgba(255,255,255,.08);
+      color:#fff;
+      border-radius: 999px;
+      padding: 8px 12px;
+      min-height: 38px;
+      cursor:pointer;
+      font-weight: 1000;
     }
 
-    @keyframes arbtn-blink {
-      0% { box-shadow: 0 0 20px 5px #007bff88; }
-      100% { box-shadow: 0 0 40px 10px #007bffcc; }
+    /* failure sheet */
+    .sheet{
+      position: fixed;
+      left:0; right:0; bottom:0;
+      z-index: 9998;
+      background: var(--card);
+      border-top-left-radius: 18px;
+      border-top-right-radius: 18px;
+      box-shadow: 0 -20px 40px rgba(0,0,0,.25);
+      transform: translateY(110%);
+      transition: transform .22s ease;
+      padding: 14px 16px calc(16px + var(--safe-b));
     }
+    .sheet.show{ transform: translateY(0%); }
+    .sheet h3{ margin: 6px 0 6px; font-size: 1.05rem; }
+    .sheet p, .sheet li{ color: var(--muted); margin: 0 0 8px; }
+    .sheet .row{ display:flex; gap:10px; flex-wrap:wrap; margin-top: 10px; }
 
-    @media (max-width: 600px) {
-      .ar-button-custom { width: 48px; height: 48px; right: 16px; bottom: calc(24px + var(--safe-bottom)); }
-      .ar-button-custom img { width: 36px; height: 36px; }
-      .ar-button-label { font-size: 0.85rem; }
-      model-viewer { margin-bottom: 16px; }
-      .ar-prompt { bottom: 70px; font-size: 0.9rem; }
-      .hotspot-annotation {
-        width: 220px;
-        font-size: 0.9rem;
-      }
-    }
-
-    /* 動きが苦手なユーザー/低負荷向け */
-    @media (prefers-reduced-motion: reduce) {
-      model-viewer {
-        --disable-effects: 1; /* JS で参照 */
-      }
+    .sr-only{
+      position:absolute; width:1px; height:1px;
+      padding:0; margin:-1px;
+      overflow:hidden;
+      clip: rect(0,0,0,0);
+      white-space:nowrap; border:0;
     }
   </style>
 </head>
+
 <body>
-  <div class="container">
+  <section class="banner" id="inAppBanner" role="region" aria-label="外部ブラウザのご案内">
+    <div class="banner-inner">
+      <div>
+        <strong>ARが起動しにくい表示モードです</strong><br>
+        <span class="muted" style="font-size:.92rem">LINE/Instagram等では失敗することがあります。可能であればSafari/Chromeでお試しください。</span>
+      </div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="btn primary" id="copyLinkBtn" type="button">リンクをコピー</button>
+        <button class="btn" id="howToOpenBtn" type="button">開き方</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="wrap">
     <h1>川へ行こう！かわいこちゃんAR</h1>
-    <p>モデル上の「+」マークをタップすると、キャラクターの詳しい情報が見られます。</p>
+    <p class="muted">「＋」を押すと説明が表示されます。ARではピンチで大きさを自由に変えられます。</p>
 
     <div class="note">
-      Android端末では、ARモード中にカメラボタンが表示されません。撮影したい場合は、端末のスクリーンショット機能をご利用ください。
+      Android端末では、ARモード中にカメラボタンが表示されない場合があります。撮影は端末のスクリーンショットをご利用ください。<br>
+      <span class="muted">※WebXR/Scene Viewer/Quick Look で表示や操作が一部異なる場合があります。</span>
     </div>
 
+    <section class="card" aria-label="3D/ARビューア">
+      <div class="chip warn" id="chip" aria-live="polite" aria-atomic="true">
+        <span class="dot" aria-hidden="true"></span>
+        <span id="chipText">準備しています…</span>
+      </div>
+
+      <button class="animBtn" id="animBtn" type="button" aria-pressed="false">アニメ：停止中</button>
+
+      <model-viewer
+        id="mv"
+        src="Kawaikochan_02_mate.glb"
+        ios-src="Kawaikochan_02_mate.usdz"
+        poster="Kawaikochan_poster.webp"
+        alt="河川マスコットキャラクター『かわいこちゃん』の3Dモデル"
+        loading="eager"
+        reveal="manual"
+        camera-controls
+        touch-action="pan-y"
+        interaction-prompt="none"
+        ar
+        ar-modes="webxr scene-viewer quick-look"
+        ar-placement="floor"
+        ar-scale="auto"
+        xr-environment
+       lass="btn primary" type="button" id="reloadBtn">再読み込み</button>
+              <button class="btn" type="button" id="retryTipsBtn">対処法</button>
+            </div>
+            <div class="sr-only" id="progressLive" aria-live="polite"></div>
+          </div>
+        </div>
+
+        <button slot="ar-button" id="arBtn" class="arBtn" type="button" aria-label="ARで見る">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M7 7h10v10H7V7Z" stroke="white" stroke-width="2" opacity=".9"/>
+            <path d="M4 9V6a2 2 0 0 1 2-2h3M20 9V6a2 2 0 0 0-2-2h-3M4 15v3a2 2 0 0 0 2 2h3M20 15v3a2 2 0 0 1-2 2h-3"
+              stroke="white" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          ARで見る
+        </button>
+
+        <div class="arGuide" id="arGuide">床を探しています…スマホをゆっくり動かしてください</div>
+
+        <button class="hotspot" id="hs-hat" slot="hotspot-hat"
+          data-position="0.15m 0.8m 0m" data-normal="0m 1m 0m"
+          aria-label="帽子の説明を開く" aria-controls="anno-hat" aria-expanded="false" type="button">
+          <div class="anno" id="anno-hat" role="tooltip" aria-hidden="true">
+            頭の帽子とズボンは「橋」がモチーフなんだ！
+          </div>
+        </button>
+
+        <button class="hotspot" id="hs-belly" slot="hotspot-belly"
+          data-position="0.1m 0.3m 0.2m" data-normal="0m 0m 1m"
+          aria-label="かわいこちゃんの説明を開く" aria-controls="anno-belly" aria-expanded="false" type="button">
+          <div class="anno" id="anno-belly" role="tooltip" aria-hidden="true">
+            趣味は河川構造物の見学や写真撮影だよ。
+          </div>
+        </button>
+      </model-viewer>
+    </section>
+
     <h2>かわいこちゃんについて</h2>
-    <p>
-      <strong>名前の由来：</strong>
-      「かわいこちゃん」の名前は、「川へ行こう！」という言葉から生まれました。<br />
-      河川をより身近に感じ、積極的に訪れてもらいたいという気持ちが込められています。
-    </p>
-    <p>
-      <strong>キャラクター紹介：</strong>
-      かわいこちゃんは、東京の川の妖精です。<br />
-      趣味は河川構造物の見学や川の写真撮影、橋等のグッズ集めです。頭の帽子とズボンは橋。
-    </p>
-
-    <!-- model-viewer 本体 -->
-    <model-viewer
-      id="kawaiko-chan-model"
-      src="Kawaikochan_02_mate.glb"
-      ios-src="Kawaikochan_02_mate.usdz"
-      ar
-      ar-modes="webxr scene-viewer quick-look"
-      ar-placement="floor"
-      ar-scale="auto"
-      camera-controls
-      
-      shadow-intensity="0.5"
-      environment-intensity="1.8"
-      exposure="0.85"
-      interaction-prompt="none"
-      camera-orbit="0deg 75deg 15m"
-      field-of-view="40deg"
-      camera-target="0m 0.45m 0m"
-      xr-environment
-      environment-image="neutral"
-      reveal="auto"
-      loading="lazy"
-      bounds="tight"
-      style="position:relative;"
-      poster="Kawaikochan_poster.webp">
-
-      <effect-composer id="composer">
-        <bloom-effect strength="0.4" radius="0.6"></bloom-effect>
-      </effect-composer>
-
-      <!-- ホットスポット（帽子） -->
-      <button class="hotspot"
-              id="hotspot-hat"
-              slot="hotspot-hat"
-              data-position="0.15m 0.8m 0m"
-              data-normal="0m 1m 0m"
-              aria-label="帽子の説明を表示"
-              aria-haspopup="true"
-              aria-controls="anno-hat"
-              aria-expanded="false">
-        <div class="hotspot-annotation" role="tooltip" id="anno-hat">
-          頭の帽子とズボンは「橋」がモチーフなんだ！
-        </div>
-      </button>
-
-      <!-- ホットスポット（お腹） -->
-      <button class="hotspot"
-              id="hotspot-belly"
-              slot="hotspot-belly"
-              data-position="0.1m 0.3m 0.2m"
-              data-normal="0m 0m 1m"
-              aria-label="かわいこちゃんの説明を表示"
-              aria-haspopup="true"
-              aria-controls="anno-belly"
-              aria-expanded="false">
-        <div class="hotspot-annotation" role="tooltip" id="anno-belly">
-          趣味は河川構造物の見学や写真撮影だよ。
-        </div>
-      </button>
- </model-viewer>
+    <p><strong>名前の由来：</strong>「かわいこちゃん」は「川へ行こう！」という言葉から生まれました。河川をより身近に感じ、積極的に訪れてもらいたいという気持ちが込められています。</p>
+    <p><strong>キャラクター紹介：</strong>かわいこちゃんは、東京の川の妖精です。趣味は河川構造物の見学や川の写真撮影、橋等のグッズ集めです。頭の帽子とズボンは橋。</p>
   </div>
 
-  <script>
-    const modelViewer = document.querySelector('#kawaiko-chan-model');
-    const arPrompt = document.querySelector('#ar-prompt');
-    const composer = modelViewer.querySelector('#composer');
+  <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true">
+    <div class="row">
+      <span id="toastMsg"></span>
+      <button type="button" id="toastBtn" style="display:none;">OK</button>
+    </div>
+  </div>
 
-    // 端末高さ（vh）補正：アドレスバーの表示/非表示で高さが変わる対策
-    function setVh() {
-      const vh = window.innerHeight * 0.01;
-      document.documentElement.style.setProperty('--vh', `${vh}px`);
+  <section class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="ARが起動できない場合のご案内">
+    <h3>ARを開始できませんでした</h3>
+    <p>次の点をお試しください（多くの場合、これで改善します）。</p>
+    <ul style="padding-left:18px;margin:0;">
+      <li>明るい場所で、床に模様（タイル・木目など）がある場所に移動する</li>
+      <li>スマホをゆっくり動かし、床が認識されるまで数秒待つ</li>
+      <li>カメラの許可が出ていない場合は、許可する</li>
+      <li>LINE/Instagram等の場合は、外部ブラウザ（Safari/Chrome）で開き直す</li>
+    </ul>
+    <div class="row">
+      <button class="btn primary" id="retryArBtn" type="button">もう一度ARを試す</button>
+      <button class="btn" id="closeSheetBtn" type="button">閉じる</button>
+    </div>
+  </section>
+
+  <script>
+  (function(){
+    const mv = document.getElementById('mv');
+
+    const chip = document.getElementById('chip');
+    const chipText = document.getElementById('chipText');
+
+    const barFill = document.getElementById('barFill');
+    const pctText = document.getElementById('pctText');
+    const loadHint = document.getElementById('loadHint');
+    const progressLive = document.getElementById('progressLive');
+    const retryArea = document.getElementById('retryArea');
+    const reloadBtn = document.getElementById('reloadBtn');
+    const retryTipsBtn = document.getElementById('retryTipsBtn');
+
+    const toast = document.getElementById('toast');
+    const toastMsg = document.getElementById('toastMsg');
+    const toastBtn = document.getElementById('toastBtn');
+
+    const sheet = document.getElementById('sheet');
+    const retryArBtn = document.getElementById('retryArBtn');
+    const closeSheetBtn = document.getElementById('closeSheetBtn');
+
+    const arGuide = document.getElementById('arGuide');
+    const animBtn = document.getElementById('animBtn');
+
+    const inAppBanner = document.getElementById('inAppBanner');
+    const copyLinkBtn = document.getElementById('copyLinkBtn');
+    const howToOpenBtn = document.getElementById('howToOpenBtn');
+
+    function setVh(){
+      const h = (window.visualViewport && window.visualViewport.height) ? window.visualViewport.height : window.innerHeight;
+      document.documentElement.style.setProperty('--vh', (h * 0.01) + 'px');
     }
-    window.addEventListener('resize', setVh, { passive: true });
-    window.addEventListener('orientationchange', setVh);
+    window.addEventListener('resize', setVh, {passive:true});
+    if (window.visualViewport) window.visualViewport.addEventListener('resize', setVh, {passive:true});
     setVh();
 
-    // セーフエリア（bottom）を CSS から取得して適用（空文字対策）
-    function setSafeBottom() {
-      const safeBottom = getComputedStyle(document.documentElement)
-        .getPropertyValue('--safe-bottom')
-        .trim() || '0px';
-      document.documentElement.style.setProperty('--safe-bottom', safeBottom);
-    }
-    window.addEventListener('resize', setSafeBottom, { passive: true });
-    setSafeBottom();
-
-    // iOS メジャーバージョン（UA 依存。必要時のみ使用）
-    function getiOSMajor() {
-      const m = navigator.userAgent.match(/OS (\d+)_\d+(_\d+)? like Mac OS X/);
-      return m ? parseInt(m[1], 10) : null;
-    }
-
-    // 低負荷環境/設定に応じてエフェクトを抑制
-    function shouldDisableEffects() {
-      const prefersReduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      const lowCore = navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4;
-      return prefersReduce || lowCore;
-    }
-    if (shouldDisableEffects() && composer) {
-      composer.remove(); // bloom を外す
-    }
-
-    // モデル読み込み後のチューニング（iOS 18+ の描画安定策）
-    modelViewer.addEventListener('load', () => {
-      const major = getiOSMajor();
-      if (major && major >= 18) {
-        modelViewer.shadowIntensity = 0.3;
-        modelViewer.environmentIntensity = 2.2;
-        modelViewer.style.setProperty('--model-opacity', '0.999');
-      }
-    });
-
-    // AR セッション開始/終了/失敗の誘導
-    modelViewer.addEventListener('ar-status', (event) => {
-      const s = event.detail.status;
-      if (s === 'session-started') {
-        arPrompt.style.display = 'block';
+    let toastTimer = null;
+    function showToast(msg, buttonText, onClick){
+      toastMsg.textContent = msg;
+      if (buttonText){
+        toastBtn.style.display = 'inline-flex';
+        toastBtn.textContent = buttonText;
+        toastBtn.onclick = function(){
+          try{ if (onClick) onClick(); } finally { hideToast(); }
+        };
       } else {
-        arPrompt.style.display = 'none';
+        toastBtn.style.display = 'none';
+        toastBtn.onclick = null;
       }
-      if (s === 'failed') {
-        alert('ARの開始に失敗しました。周囲の明るさや床面の模様を確認し、端末をゆっくり動かしてください。');
+      toast.classList.add('show');
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(hideToast, 4200);
+    }
+    function hideToast(){
+      toast.classList.remove('show');
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = null;
+    }
+
+    function showSheet(){ sheet.classList.add('show'); }
+    function hideSheet(){ sheet.classList.remove('show'); }
+
+    function isInApp(){
+      const ua = navigator.userAgent || '';
+      return /(Line|LIFF|Instagram|FBAN|FBAV|Twitter|MicroMessenger|WeChat|GSA|; wv)/i.test(ua);
+    }
+    if (isInApp()) inAppBanner.style.display = 'block';
+
+    copyLinkBtn.addEventListener('click', async function(){
+      try{
+        await navigator.clipboard.writeText(location.href);
+        showToast('リンクをコピーしました。Safari/Chromeで貼り付けて開いてください。');
+      }catch(e){
+        const t = document.createElement('textarea');
+        t.value = location.href;
+        document.body.appendChild(t);
+        t.select();
+        document.execCommand('copy');
+        t.remove();
+        showToast('リンクをコピーしました。Safari/Chromeで貼り付けて開いてください。');
       }
     });
 
-    // ---- ホットスポット：ドラッグとクリックの競合対策・ARIA 更新・他を閉じる ----
-    let dragStart = null;
+    howToOpenBtn.addEventListener('click', function(){
+      const isiOS = /iPhone|iPad|iPod/i.test(navigator.userAgent || '') ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      showToast(
+        isiOS
+          ? 'iPhone/iPad：共有メニューから「Safariで開く」をお試しください。見当たらない場合は、コピーしたリンクをSafariに貼り付けてください。'
+          : 'Android：メニューから「ブラウザで開く / Chromeで開く」をお試しください。難しい場合は、コピーしたリンクをChromeに貼り付けてください。'
+      );
+    });
 
-    modelViewer.addEventListener('pointerdown', (e) => {
-      dragStart = { x: e.clientX, y: e.clientY };
-    }, { passive: true });
+    function getTier(){
+      const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const saveData = navigator.connection && navigator.connection.saveData;
+      const mem = navigator.deviceMemory || 4;
+      const cores = navigator.hardwareConcurrency || 4;
+      const dpr = Math.min(window.devicePixelRatio || 1, 3);
 
-    modelViewer.addEventListener('pointerup', (event) => {
-      const hotspot = event.target.closest('.hotspot');
-      if (!hotspot) return;
+      if (reduce || saveData) return 'low';
+      if (cores >= 8 && mem >= 6 && dpr <= 2.5) return 'high';
+      return 'standard';
+    }
 
-      // ドラッグ距離が小さい場合だけクリック扱い
-      if (dragStart) {
-        const dx = event.clientX - dragStart.x;
-        const dy = event.clientY - dragStart.y;
-        const dist = Math.hypot(dx, dy);
-        if (dist > 8) return;
+    function applyTier(tier){
+      const dark = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches;
+      const t = {
+        high:     {env:1.55, exp: dark ? 1.08 : 1.02, sh:0.95, soft:0.90, rs:1.12},
+        standard: {env:1.35, exp: dark ? 1.05 : 1.00, sh:0.85, soft:0.85, rs:1.00},
+        low:      {env:1.15, exp: dark ? 1.03 : 0.98, sh:0.65, soft:0.82, rs:0.90}
+      }[tier];
+
+      mv.environmentIntensity = t.env;
+      mv.exposure = t.exp;
+      mv.shadowIntensity = t.sh;
+      mv.shadowSoftness = t.soft;
+
+      if ('renderScale' in mv) {
+        const dpr = Math.min(window.devicePixelRatio || 1, 3);
+        const cap = (dpr >= 2.6) ? 1.05 : 1.20;
+        mv.renderScale = Math.min(t.rs, cap);
       }
+    }
 
-      const annotation = hotspot.querySelector('.hotspot-annotation');
-      if (!annotation) return;
+    mv.addEventListener('progress', function(ev){
+      const p = Math.max(0, Math.min(1, (ev.detail && ev.detail.totalProgress) ? ev.detail.totalProgress : 0));
+      const pct = Math.round(p * 100);
+      barFill.style.width = pct + '%';
+      pctText.textContent = pct + '%';
+      loadHint.textContent =
+        (pct < 30) ? 'モデルを読み込んでいます…' :
+        (pct < 70) ? '質感を整えています…' :
+        (pct < 95) ? 'もうすぐ表示できます…' :
+        '最終調整中…';
+      progressLive.textContent = '読み込み ' + pct + '%';
+      chipText.textContent = '読み込み中… ' + pct + '%';
+    });
 
-      // 他の注釈を閉じる（同時開き防止）
-      document.querySelectorAll('.hotspot-annotation.visible').forEach(el => {
-        if (el !== annotation) {
-          el.classList.remove('visible');
-          const parentBtn = el.closest('.hotspot');
-          if (parentBtn) parentBtn.setAttribute('aria-expanded', 'false');
+    mv.addEventListener('error', function(){
+      chip.classList.remove('warn','ok');
+      chip.classList.add('err');
+      chipText.textContent = '読み込みに失敗しました';
+      retryArea.style.display = 'flex';
+      showToast('読み込みに失敗しました。回線をご確認のうえ、再読み込みをお試しください。', '再読み込み', function(){
+        location.reload();
+      });
+    });
+
+    reloadBtn.addEventListener('click', function(){ location.reload(); });
+    retryTipsBtn.addEventListener('click', function(){
+      showToast('対処法：Wi‑Fi/電波の良い場所で再読み込みしてください。アプリ内ブラウザの場合はSafari/Chromeでの表示が安定します。');
+    });
+
+    // hotspots
+    const hotspots = Array.from(mv.querySelectorAll('.hotspot'));
+    let lastDown = null;
+
+    function closeAll(exceptId){
+      hotspots.forEach(function(btn){
+        const anno = btn.querySelector('.anno');
+        if (!anno) return;
+        if (exceptId && anno.id === exceptId) return;
+        anno.classList.remove('show');
+        anno.setAttribute('aria-hidden','true');
+        btn.setAttribute('aria-expanded','false');
+        anno.style.transform = '';
+      });
+    }
+
+    function clampAnno(anno){
+      const margin = 12;
+      const r = anno.getBoundingClientRect();
+      let dx = 0, dy = 0;
+      if (r.left < margin) dx = margin - r.left;
+      if (r.right > window.innerWidth - margin) dx = (window.innerWidth - margin) - r.right;
+      if (r.top < margin) dy = margin - r.top;
+      if (r.bottom > window.innerHeight - margin) dy = (window.innerHeight - margin) - r.bottom;
+      if (dx || dy) anno.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+    }
+
+    hotspots.forEach(function(btn){
+      btn.addEventListener('pointerdown', function(e){
+        e.stopPropagation();
+        lastDown = {x:e.clientX, y:e.clientY};
+      }, {passive:false});
+
+      btn.addEventListener('click', function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        const anno = btn.querySelector('.anno');
+        if (!anno) return;
+
+        if (lastDown){
+          const dx = e.clientX - lastDown.x;
+          const dy = e.clientY - lastDown.y;
+          if (Math.hypot(dx,dy) > 10) return;
         }
+
+        const willOpen = btn.getAttribute('aria-expanded') !== 'true';
+        closeAll(willOpen ? anno.id : null);
+
+        btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+        anno.classList.toggle('show', willOpen);
+        anno.setAttribute('aria-hidden', willOpen ? 'false' : 'true');
+
+        if (willOpen) requestAnimationFrame(function(){ clampAnno(anno); });
       });
 
-      // 対象注釈のトグルと ARIA 更新
-      const visible = annotation.classList.toggle('visible');
-      hotspot.setAttribute('aria-expanded', visible ? 'true' : 'false');
+      btn.addEventListener('keydown', function(e){
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); btn.click(); }
+        if (e.key === 'Escape') closeAll();
+      });
+    });
 
-      // 注釈が画面外にはみ出さないよう左右を反転（簡易）
-      if (visible) keepAnnotationInView(annotation);
-    }, { passive: true });
+    document.addEventListener('pointerdown', function(e){
+      const inHotspot = e.target && e.target.closest && e.target.closest('.hotspot');
+      if (!inHotspot) closeAll();
+    }, {passive:true});
 
-    function keepAnnotationInView(annoEl) {
-      // 左右のはみ出しを検出して、left/right を入れ替える
-      annoEl.style.right = 'auto';
-      annoEl.style.left = 'calc(100% + 1em)';
+    window.addEventListener('resize', function(){
+      hotspots.forEach(function(btn){
+        const anno = btn.querySelector('.anno');
+        if (anno && anno.classList.contains('show')) requestAnimationFrame(function(){ clampAnno(anno); });
+      });
+    }, {passive:true});
 
-      const rect = annoEl.getBoundingClientRect();
-      const margin = 16;
+    // AR events: WebXRではページ内UIが効くが、Scene Viewer/Quick Lookは外部アプリなので制御が限定的
+    mv.addEventListener('ar-status', function(ev){
+      const s = ev.detail && ev.detail.status;
 
-      if (rect.right > window.innerWidth - margin) {
-        // 右へはみ出す場合は、左側に反転
-        annoEl.style.left = 'auto';
-        annoEl.style.right = 'calc(100% + 1em)';
+      if (s === 'session-started'){
+        arGuide.classList.add('show');
+        showToast('床が見つかるまで、スマホをゆっくり動かしてください。');
+        hideSheet();
+        try{
+          mv.shadowIntensity = Math.max(0.6, (mv.shadowIntensity || 0.85) * 0.85);
+          mv.exposure = (mv.exposure || 1.0) * 0.98;
+        }catch(e){}
       }
-    }
+      if (s === 'object-placed'){
+        arGuide.classList.remove('show');
+        showToast('配置できました。ピンチで大きさを自由に変えられます。');
+      }
+      if (s === 'not-presenting'){
+        arGuide.classList.remove('show');
+        applyTier(getTier());
+      }
+      if (s === 'failed'){
+        arGuide.classList.remove('show');
+        chip.classList.remove('warn','ok');
+        chip.classList.add('err');
+        chipText.textContent = 'AR：起動できませんでした';
+        showSheet();
+      }
+    });
+
+    retryArBtn.addEventListener('click', function(){
+      hideSheet();
+      try{
+        if (typeof mv.activateAR === 'function') mv.activateAR();
+        else showToast('この環境では再試行できません。Safari/Chromeでお試しください。');
+      }catch(e){
+        showToast('再試行できませんでした。Safari/Chromeでお試しください。');
+      }
+    });
+    closeSheetBtn.addEventListener('click', hideSheet);
+
+    mv.addEventListener('load', function(){
+      const tier = getTier();
+      applyTier(tier);
+
+      if (typeof mv.dismissPoster === 'function') mv.dismissPoster();
+
+      chip.classList.remove('warn','err');
+      chip.classList.add('ok');
+      chipText.textContent = '表示中（品質：' + (tier === 'high' ? '高' : tier === 'standard' ? '標準' : '省電力') + '）';
+
+      const key = 'kawaiko_first_hint_v1';
+      if (!localStorage.getItem(key)) {
+        localStorage.setItem(key, '1');
+        showToast('操作のヒント：ドラッグで回転、ピンチで拡大縮小。ARは右下の「ARで見る」からどうぞ。');
+      }
+
+      // animation (if any)
+      let anims = [];
+      try{ anims = mv.availableAnimations || []; }catch(e){ anims = []; }
+      const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      if (anims.length > 0 && !reduce) {
+        animBtn.classList.add('show');
+        let playing = true;
+        try{
+          mv.animationName = anims[0];
+          mv.loop = true;
+          if (typeof mv.play === 'function') mv.play();
+          animBtn.textContent = 'アニメ：再生中';
+          animBtn.setAttribute('aria-pressed','true');
+        }catch(e){}
+
+        animBtn.onclick = function(){
+          try{
+            playing = !playing;
+            if (playing){
+              mv.loop = true;
+              if (mv.play) mv.play();
+              animBtn.textContent = 'アニメ：再生中';
+              animBtn.setAttribute('aria-pressed','true');
+            }else{
+              if (mv.pause) mv.pause();
+              animBtn.textContent = 'アニメ：停止中';
+              animBtn.setAttribute('aria-pressed','false');
+            }
+          }catch(e){}
+        };
+      } else {
+        animBtn.classList.remove('show');
+      }
+    }, { once:true });
+
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'Escape'){ hideSheet(); closeAll(); }
+    });
+
+  })();
   </script>
 </body>
 </html>
