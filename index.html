@@ -7,13 +7,13 @@
   <meta name="theme-color" content="#0B5FFF">
   <title>かわいこちゃんARビューワー</title>
 
-  <!-- model-viewer（バージョン固定：安定運用） -->
-  https://cdn.jsdelivr.net/npm/@google/model-viewer@4.1.0/dist/model-viewer.min.js</script>
-  https://cdn.jsdelivr.net/npm/@google/model-viewer@4.1.0/dist/model-viewer-legacy.js</script>
+<!-- model-viewer（productionはバージョン固定） -->
+<script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@.js"</script>
+<script type="nomodule" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@4.1.0/dist/model-viewer-legacy.js"</script>
 
-  <!-- 先読み（体感向上） -->
-  Kawaikochan_02_mate.glb
-  <link rel="preload" href="Kawaikochan_02_mate.usdz" as="fetch" type="model/vnd.usdz+#F6F7FB; --card:#FFFFFF; --text:#15202B; --muted:#5C6B7A;
+
+  <!-- preload（体感速度・回線差に効く） -->
+   <link rel="preload" href="Kawaikochan_02_mate.glb" as="fetch" type="Kawaikochan_02_mate.usdz" as="fetch" type="model/vnd.usdz" --bg:#F6F7FB; --card:#FFFFFF; --text:#15202B; --muted:#5C6B7A;
       --brand:#0B5FFF; --brand2:#0647C6;
       --shadow: 0 12px 30px rgba(10,23,55,.12);
       --r:16px;
@@ -47,7 +47,6 @@
     p{ margin:.35rem 0; }
     .muted{ color:var(--muted); font-weight:700; }
 
-    /* in-app banner */
     .banner{
       display:none;
       position: sticky;
@@ -58,10 +57,7 @@
       padding: 10px 14px;
     }
     @media (prefers-color-scheme: dark){
-      .banner{
-        background: rgba(255,213,74,.10);
-        border-bottom-color: rgba(255,255,255,.10);
-      }
+      .banner{ background: rgba(255,213,74,.10); border-bottom-color: rgba(255,255,255,.10); }
     }
     .banner-inner{
       max-width: 980px;
@@ -122,7 +118,6 @@
       outline: none;
     }
 
-    /* status chip */
     .chip{
       position:absolute;
       left: 12px;
@@ -157,7 +152,6 @@
       white-space:nowrap;
     }
 
-    /* poster/loading */
     .poster{
       width:100%; height:100%;
       display:flex;
@@ -211,7 +205,6 @@
       flex-wrap: wrap;
     }
 
-    /* custom AR button */
     .arBtn{
       position:absolute;
       right: 14px;
@@ -254,7 +247,6 @@
     }
     .arGuide.show{ display:block; }
 
-    /* animation toggle */
     .animBtn{
       position:absolute;
       right: 12px;
@@ -273,7 +265,6 @@
     }
     .animBtn.show{ display:block; }
 
-    /* hotspots */
     .hotspot{
       width: var(--hotspot-hit);
       height: var(--hotspot-hit);
@@ -334,7 +325,6 @@
     }
     .anno.show{ display:block; }
 
-    /* toast */
     .toast{
       position: fixed;
       left: 50%;
@@ -368,7 +358,6 @@
       font-weight: 1000;
     }
 
-    /* failure sheet */
     .sheet{
       position: fixed;
       left:0; right:0; bottom:0;
@@ -443,10 +432,14 @@
         ar-placement="floor"
         ar-scale="auto"
         xr-environment
-       lass="btn primary" type="button" id="reloadBtn">再読み込み</button>
-              <button class="btn" type="button" id="retryTipsBtn">対処法</button>
-            </div>
-            <div class="sr-only" id="progressLive" aria-live="polite"></div>
+        environment-image="neutral"
+        tone-mapping="neutral"
+        exposure="1.0"
+        environment-intensity="1.35"
+        shadow-intensity="0.85"
+        shadow-softness="0.85"
+        camera-orbit="0deg 72deg 14m"
+        fieldiv>
           </div>
         </div>
 
@@ -464,17 +457,13 @@
         <button class="hotspot" id="hs-hat" slot="hotspot-hat"
           data-position="0.15m 0.8m 0m" data-normal="0m 1m 0m"
           aria-label="帽子の説明を開く" aria-controls="anno-hat" aria-expanded="false" type="button">
-          <div class="anno" id="anno-hat" role="tooltip" aria-hidden="true">
-            頭の帽子とズボンは「橋」がモチーフなんだ！
-          </div>
+          <div class="anno" id="anno-hat" role="tooltip" aria-hidden="true">頭の帽子とズボンは「橋」がモチーフなんだ！</div>
         </button>
 
         <button class="hotspot" id="hs-belly" slot="hotspot-belly"
           data-position="0.1m 0.3m 0.2m" data-normal="0m 0m 1m"
           aria-label="かわいこちゃんの説明を開く" aria-controls="anno-belly" aria-expanded="false" type="button">
-          <div class="anno" id="anno-belly" role="tooltip" aria-hidden="true">
-            趣味は河川構造物の見学や写真撮影だよ。
-          </div>
+          <div class="anno" id="anno-belly" role="tooltip" aria-hidden="true">趣味は河川構造物の見学や写真撮影だよ。</div>
         </button>
       </model-viewer>
     </section>
@@ -662,7 +651,6 @@
       showToast('対処法：Wi‑Fi/電波の良い場所で再読み込みしてください。アプリ内ブラウザの場合はSafari/Chromeでの表示が安定します。');
     });
 
-    // hotspots
     const hotspots = Array.from(mv.querySelectorAll('.hotspot'));
     let lastDown = null;
 
@@ -735,7 +723,6 @@
       });
     }, {passive:true});
 
-    // AR events: WebXRではページ内UIが効くが、Scene Viewer/Quick Lookは外部アプリなので制御が限定的
     mv.addEventListener('ar-status', function(ev){
       const s = ev.detail && ev.detail.status;
 
@@ -792,7 +779,6 @@
         showToast('操作のヒント：ドラッグで回転、ピンチで拡大縮小。ARは右下の「ARで見る」からどうぞ。');
       }
 
-      // animation (if any)
       let anims = [];
       try{ anims = mv.availableAnimations || []; }catch(e){ anims = []; }
       const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
