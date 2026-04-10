@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>かわいこちゃんARビューワー</title>
 
-  <!-- model-viewer（modernブラウザ向け） -->
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
   <script nomodule src="https://unpkg.com/@google/model-viewer/dist/model-viewer-legacy.js"></script>
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer-effects.min.js"></script>
@@ -15,9 +14,8 @@
       --ar-button-color: #007bffcc;
       --ar-button-size: 64px;
       --model-opacity: 1;
-      /* iOS のセーフエリアを CSS で初期化（JS から参照） */
       --safe-bottom: env(safe-area-inset-bottom, 0px);
-      --vh: 1vh; /* 初期値（JS で更新） */
+      --vh: 1vh;
     }
 
     body {
@@ -31,6 +29,15 @@
       max-width: 1200px;
       margin: 0 auto;
       padding: 20px;
+    }
+
+    .note {
+      background: #fff3cd;
+      color: #856404;
+      padding: 10px 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 0.9rem;
     }
 
     model-viewer {
@@ -56,14 +63,13 @@
       width: 24px;
       transition: opacity 0.3s;
       position: relative;
-      touch-action: manipulation; /* モバイルのクリック遅延を抑制 */
+      touch-action: manipulation;
     }
     .hotspot:focus-visible {
       outline: 3px solid #0056b3;
       outline-offset: 3px;
     }
-    .hotspot[slot="hotspot-hat"]::before,
-    .hotspot[slot="hotspot-belly"]::before {
+    .hotspot::before {
       content: "+";
       font-size: 20px;
       font-weight: bold;
@@ -81,32 +87,31 @@
       border-radius: 8px;
       box-shadow: 0 4px 8px rgba(0,123,255,0.2);
       color: #333;
-      display: none; /* 初期は非表示 */
+      display: none;
       font-family: 'Helvetica Neue', Arial, sans-serif;
       font-size: 1rem;
       font-weight: 500;
       left: calc(100% + 1em);
-      width: 280px;
+      width: 240px;
       padding: 0.8em 1em;
       position: absolute;
       top: 50%;
       transform: translateY(-50%);
-      pointer-events: none; /* 注釈はクリック不可 */
+      pointer-events: none;
       white-space: normal;
       word-break: break-word;
       text-align: left;
-      writing-mode: horizontal-tb;
       z-index: 10;
     }
     .hotspot-annotation.visible {
       display: block;
     }
 
-    /* カスタム AR ボタンは button 要素 */
+    /* カスタム AR ボタン */
     .ar-button-custom {
       position: absolute;
-      bottom: calc(60px + var(--safe-bottom));
-      right: 32px;
+      bottom: calc(20px + var(--safe-bottom));
+      right: 20px;
       width: var(--ar-button-size);
       height: var(--ar-button-size);
       background: var(--ar-button-color);
@@ -119,14 +124,22 @@
       z-index: 1000;
       animation: arbtn-blink 1.2s infinite alternate;
       border: 4px solid #fff;
-      transition: background 0.2s, opacity 0.2s, bottom 0.2s;
+      transition: background 0.2s, opacity 0.2s, transform 0.2s;
       opacity: 0.92;
       touch-action: manipulation;
-      border: none; /* 既定ボーダー除去 */
       padding: 0;
     }
-    .ar-button-custom:hover { background: #0056b3; opacity: 1; }
-    .ar-button-custom img { width: 60%; height: 60%; filter: brightness(1.2) saturate(1.5); pointer-events: none; }
+    .ar-button-custom:hover { 
+      background: #0056b3; 
+      opacity: 1; 
+      transform: scale(1.05);
+    }
+    .ar-button-custom svg {
+      width: 50%;
+      height: 50%;
+      fill: #fff;
+      pointer-events: none;
+    }
     .ar-button-label {
       position: absolute;
       top: 100%;
@@ -137,14 +150,14 @@
       color: #007bff;
       padding: 0.2em 0.8em;
       border-radius: 1em;
-      font-size: 1rem;
+      font-size: 0.9rem;
       font-weight: bold;
-      box-shadow: 0 2px 8px rgba(0,123,255,0.08);
+      box-shadow: 0 2px 8px rgba(0,123,255,0.1);
       pointer-events: none;
-      user-select: none;
       white-space: nowrap;
     }
 
+    /* AR誘導プロンプト */
     .ar-prompt {
       position: absolute;
       left: 50%;
@@ -156,32 +169,32 @@
       border-radius: 20px;
       font-size: 1rem;
       text-align: center;
-      display: none;
+      display: none; /* 初期非表示 */
       z-index: 1001;
+      pointer-events: none;
     }
 
     @keyframes arbtn-blink {
-      0% { box-shadow: 0 0 20px 5px #007bff88; }
-      100% { box-shadow: 0 0 40px 10px #007bffcc; }
+      0% { box-shadow: 0 0 10px 2px #007bff88; }
+      100% { box-shadow: 0 0 20px 6px #007bffcc; }
     }
 
     @media (max-width: 600px) {
-      .ar-button-custom { width: 48px; height: 48px; right: 16px; bottom: calc(24px + var(--safe-bottom)); }
-      .ar-button-custom img { width: 36px; height: 36px; }
-      .ar-button-label { font-size: 0.85rem; }
+      .ar-button-custom { width: 56px; height: 56px; right: 16px; bottom: calc(16px + var(--safe-bottom)); }
+      .ar-button-label { font-size: 0.8rem; }
       model-viewer { margin-bottom: 16px; }
-      .ar-prompt { bottom: 70px; font-size: 0.9rem; }
+      .ar-prompt { bottom: 90px; font-size: 0.9rem; }
       .hotspot-annotation {
-        width: 220px;
+        width: 200px;
         font-size: 0.9rem;
       }
     }
 
-    /* 動きが苦手なユーザー/低負荷向け */
     @media (prefers-reduced-motion: reduce) {
       model-viewer {
-        --disable-effects: 1; /* JS で参照 */
+        --disable-effects: 1;
       }
+      .ar-button-custom { animation: none; }
     }
   </style>
 </head>
@@ -196,17 +209,16 @@
 
     <h2>かわいこちゃんについて</h2>
     <p>
-      <strong>名前の由来：</strong>
+      <strong>名前の由来：</strong><br />
       「かわいこちゃん」の名前は、「川へ行こう！」という言葉から生まれました。<br />
       河川をより身近に感じ、積極的に訪れてもらいたいという気持ちが込められています。
     </p>
     <p>
-      <strong>キャラクター紹介：</strong>
+      <strong>キャラクター紹介：</strong><br />
       かわいこちゃんは、東京の川の妖精です。<br />
       趣味は河川構造物の見学や川の写真撮影、橋等のグッズ集めです。頭の帽子とズボンは橋。
     </p>
 
-    <!-- model-viewer 本体 -->
     <model-viewer
       id="kawaiko-chan-model"
       src="Kawaikochan_02_mate.glb"
@@ -216,7 +228,6 @@
       ar-placement="floor"
       ar-scale="auto"
       camera-controls
-      
       shadow-intensity="0.5"
       environment-intensity="1.8"
       exposure="0.85"
@@ -229,14 +240,24 @@
       reveal="auto"
       loading="lazy"
       bounds="tight"
-      style="position:relative;"
       poster="Kawaikochan_poster.webp">
+
+      <button slot="ar-button" class="ar-button-custom">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <path d="M0 0h24v24H0V0z" fill="none"/>
+          <path d="M21 3H3C2 3 1 4 1 5v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 15.92c-.02.03-.06.06-.08.08H3.08c-.03-.02-.06-.05-.08-.08V5.08C3.02 5.05 3.06 5.02 3.08 5h17.83c.03.02.06.05.08.08v13.84zM12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zm0 8c-1.65 0-3-1.35-3-3s1.35-3 3-3 3 1.35 3 3-1.35 3-3 3z"/>
+        </svg>
+        <div class="ar-button-label">ARで見る</div>
+      </button>
+
+      <div id="ar-prompt" class="ar-prompt">
+        端末をゆっくり動かして床を映してください
+      </div>
 
       <effect-composer id="composer">
         <bloom-effect strength="0.4" radius="0.6"></bloom-effect>
       </effect-composer>
 
-      <!-- ホットスポット（帽子） -->
       <button class="hotspot"
               id="hotspot-hat"
               slot="hotspot-hat"
@@ -251,7 +272,6 @@
         </div>
       </button>
 
-      <!-- ホットスポット（お腹） -->
       <button class="hotspot"
               id="hotspot-belly"
               slot="hotspot-belly"
@@ -265,7 +285,7 @@
           趣味は河川構造物の見学や写真撮影だよ。
         </div>
       </button>
- </model-viewer>
+    </model-viewer>
   </div>
 
   <script>
@@ -273,7 +293,7 @@
     const arPrompt = document.querySelector('#ar-prompt');
     const composer = modelViewer.querySelector('#composer');
 
-    // 端末高さ（vh）補正：アドレスバーの表示/非表示で高さが変わる対策
+    // 端末高さ（vh）補正
     function setVh() {
       const vh = window.innerHeight * 0.01;
       document.documentElement.style.setProperty('--vh', `${vh}px`);
@@ -282,56 +302,37 @@
     window.addEventListener('orientationchange', setVh);
     setVh();
 
-    // セーフエリア（bottom）を CSS から取得して適用（空文字対策）
+    // セーフエリア補正
     function setSafeBottom() {
       const safeBottom = getComputedStyle(document.documentElement)
-        .getPropertyValue('--safe-bottom')
-        .trim() || '0px';
+        .getPropertyValue('--safe-bottom').trim() || '0px';
       document.documentElement.style.setProperty('--safe-bottom', safeBottom);
     }
     window.addEventListener('resize', setSafeBottom, { passive: true });
     setSafeBottom();
 
-    // iOS メジャーバージョン（UA 依存。必要時のみ使用）
-    function getiOSMajor() {
-      const m = navigator.userAgent.match(/OS (\d+)_\d+(_\d+)? like Mac OS X/);
-      return m ? parseInt(m[1], 10) : null;
-    }
-
-    // 低負荷環境/設定に応じてエフェクトを抑制
+    // エフェクト抑制
     function shouldDisableEffects() {
       const prefersReduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       const lowCore = navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4;
       return prefersReduce || lowCore;
     }
     if (shouldDisableEffects() && composer) {
-      composer.remove(); // bloom を外す
+      composer.remove();
     }
 
-    // モデル読み込み後のチューニング（iOS 18+ の描画安定策）
-    modelViewer.addEventListener('load', () => {
-      const major = getiOSMajor();
-      if (major && major >= 18) {
-        modelViewer.shadowIntensity = 0.3;
-        modelViewer.environmentIntensity = 2.2;
-        modelViewer.style.setProperty('--model-opacity', '0.999');
-      }
-    });
-
-    // AR セッション開始/終了/失敗の誘導
+    // AR セッションのステータス管理
     modelViewer.addEventListener('ar-status', (event) => {
       const s = event.detail.status;
-      if (s === 'session-started') {
-        arPrompt.style.display = 'block';
-      } else {
-        arPrompt.style.display = 'none';
+      if (arPrompt) {
+        arPrompt.style.display = (s === 'session-started') ? 'block' : 'none';
       }
       if (s === 'failed') {
         alert('ARの開始に失敗しました。周囲の明るさや床面の模様を確認し、端末をゆっくり動かしてください。');
       }
     });
 
-    // ---- ホットスポット：ドラッグとクリックの競合対策・ARIA 更新・他を閉じる ----
+    // ---- ホットスポット操作 ----
     let dragStart = null;
 
     modelViewer.addEventListener('pointerdown', (e) => {
@@ -340,20 +341,29 @@
 
     modelViewer.addEventListener('pointerup', (event) => {
       const hotspot = event.target.closest('.hotspot');
-      if (!hotspot) return;
+      
+      // ★追加: ホットスポット以外（背景やモデル本体）をタップしたらすべての吹き出しを閉じる
+      if (!hotspot) {
+        document.querySelectorAll('.hotspot-annotation.visible').forEach(el => {
+          el.classList.remove('visible');
+          const parentBtn = el.closest('.hotspot');
+          if (parentBtn) parentBtn.setAttribute('aria-expanded', 'false');
+        });
+        return;
+      }
 
-      // ドラッグ距離が小さい場合だけクリック扱い
+      // ドラッグ距離判定
       if (dragStart) {
         const dx = event.clientX - dragStart.x;
         const dy = event.clientY - dragStart.y;
         const dist = Math.hypot(dx, dy);
-        if (dist > 8) return;
+        if (dist > 8) return; // スワイプ操作とみなす
       }
 
       const annotation = hotspot.querySelector('.hotspot-annotation');
       if (!annotation) return;
 
-      // 他の注釈を閉じる（同時開き防止）
+      // 他の注釈を閉じる
       document.querySelectorAll('.hotspot-annotation.visible').forEach(el => {
         if (el !== annotation) {
           el.classList.remove('visible');
@@ -362,24 +372,22 @@
         }
       });
 
-      // 対象注釈のトグルと ARIA 更新
+      // 対象注釈のトグル
       const visible = annotation.classList.toggle('visible');
       hotspot.setAttribute('aria-expanded', visible ? 'true' : 'false');
 
-      // 注釈が画面外にはみ出さないよう左右を反転（簡易）
       if (visible) keepAnnotationInView(annotation);
     }, { passive: true });
 
     function keepAnnotationInView(annoEl) {
-      // 左右のはみ出しを検出して、left/right を入れ替える
       annoEl.style.right = 'auto';
       annoEl.style.left = 'calc(100% + 1em)';
 
       const rect = annoEl.getBoundingClientRect();
       const margin = 16;
 
+      // 画面右側にはみ出す場合は左側に配置を反転
       if (rect.right > window.innerWidth - margin) {
-        // 右へはみ出す場合は、左側に反転
         annoEl.style.left = 'auto';
         annoEl.style.right = 'calc(100% + 1em)';
       }
@@ -387,7 +395,3 @@
   </script>
 </body>
 </html>
-
-
-
-
